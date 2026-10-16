@@ -1,0 +1,8 @@
+log/*
+tmp/*
+storage/*
+vendor/bundle
+coverage
+.git
+.env
+config/master.key

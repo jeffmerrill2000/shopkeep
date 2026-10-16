@@ -1,0 +1,104 @@
+name: shopkeep
+
+services:
+  mysql:
+    image: mysql:8.4
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: shopkeep
+      MYSQL_DATABASE: shopkeep_development
+      MYSQL_USER: shopkeep
+      MYSQL_PASSWORD: shopkeep
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - shopkeep_mysql:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ushopkeep", "-pshopkeep"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  redis:
+    image: redis:8.4
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - shopkeep_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    profiles: ["app"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: bundle exec puma -b tcp://0.0.0.0:3000
+    environment:
+      RAILS_ENV: development
+      DB_HOST: mysql
+      MYSQL_USER: shopkeep
+      MYSQL_PASSWORD: shopkeep
+      MYSQL_DATABASE: shopkeep_development
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: http://localhost:5173
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-local-container-secret-key-base-not-for-production}
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  worker:
+    profiles: ["app"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: bundle exec sidekiq
+    environment:
+      RAILS_ENV: development
+      DB_HOST: mysql
+      MYSQL_USER: shopkeep
+      MYSQL_PASSWORD: shopkeep
+      MYSQL_DATABASE: shopkeep_development
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-local-container-secret-key-base-not-for-production}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      VITE_API_PROXY_TARGET: http://api:3000
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  shopkeep_mysql:
+  shopkeep_redis:

@@ -1,0 +1,1355 @@
+---
+openapi: 3.0.3
+info:
+  title: ShopKeep API
+  version: v1
+  description: Mutating requests send the token from GET /api/v1/csrf in the X-CSRF-Token
+    header and include the session cookie.
+servers:
+- url: http://127.0.0.1:3000
+components:
+  schemas:
+    User:
+      type: object
+      required:
+      - id
+      - email
+      - name
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+    Store:
+      type: object
+      required:
+      - id
+      - merchant_id
+      - name
+      - handle
+      - currency
+      - status
+      - role
+      properties:
+        id:
+          type: integer
+        merchant_id:
+          type: integer
+        name:
+          type: string
+        handle:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+        role:
+          type: string
+    Membership:
+      type: object
+      required:
+      - id
+      - user_id
+      - email
+      - name
+      - role
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+    AuditEvent:
+      type: object
+      required:
+      - id
+      - action
+      - metadata
+      - created_at
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        actor_id:
+          type: integer
+          nullable: true
+        subject_type:
+          type: string
+          nullable: true
+        subject_id:
+          type: integer
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+        ip_address:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+    Error:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - code
+          - message
+          - details
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+paths:
+  "/api/v1/stores/{store_id}/products":
+    get:
+      summary: List products
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: products
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Create a product and its first variant
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/products/{id}":
+    get:
+      summary: Show a product
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: product
+          content:
+            application/json:
+              schema:
+                type: object
+    patch:
+      summary: Update a product
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+  "/api/v1/stores/{store_id}/products/{id}/archive":
+    post:
+      summary: Archive a product
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: archived
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/stores/{store_id}/products/{product_id}/variants":
+    post:
+      summary: Add a variant
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: product_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/products/{product_id}/variants/{id}":
+    patch:
+      summary: Update a variant
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: product_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+  "/api/v1/stores/{store_id}/products/{product_id}/images":
+    post:
+      summary: Upload a product image
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: product_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: stored
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: file
+        required: true
+  "/api/v1/stores/{store_id}/products/{product_id}/images/{id}":
+    get:
+      summary: Download a product image
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: product_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: file
+  "/api/v1/stores/{store_id}/collections":
+    get:
+      summary: List collections
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: collections
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Create a collection
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/collections/{id}/products":
+    post:
+      summary: Add a product to a collection
+      tags:
+      - Catalog
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: added
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/inventory_items":
+    get:
+      summary: List inventory
+      tags:
+      - Inventory
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: items
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/stores/{store_id}/inventory_items/{id}/adjustments":
+    post:
+      summary: Adjust on-hand inventory
+      tags:
+      - Inventory
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: adjusted
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/discount_codes":
+    get:
+      summary: List discount codes
+      tags:
+      - Pricing
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: codes
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Create a discount code
+      tags:
+      - Pricing
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/shipping_rates":
+    get:
+      summary: List shipping rates
+      tags:
+      - Pricing
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: rates
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Create a shipping rate
+      tags:
+      - Pricing
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/tax_rates":
+    get:
+      summary: List tax rates
+      tags:
+      - Pricing
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: rates
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      summary: Create a tax rate
+      tags:
+      - Pricing
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/orders":
+    get:
+      summary: List orders
+      tags:
+      - Orders
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: orders
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/stores/{store_id}/orders/{id}":
+    get:
+      summary: Show an order
+      tags:
+      - Orders
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: order
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/stores/{store_id}/orders/{id}/fulfillment":
+    post:
+      summary: Advance fulfillment
+      tags:
+      - Orders
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/stores/{store_id}/customers":
+    get:
+      summary: List customers
+      tags:
+      - Customers
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: customers
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/stores/{store_id}/customers/{id}":
+    get:
+      summary: Show a customer
+      tags:
+      - Customers
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: customer
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/stores/{store_id}/sales_summary":
+    get:
+      summary: Sales summary
+      tags:
+      - Reports
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: summary
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/storefront/{handle}":
+    get:
+      summary: Public storefront
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: catalog
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/storefront/{handle}/products":
+    get:
+      summary: Public products
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: products
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/storefront/{handle}/products/{product_handle}":
+    get:
+      summary: Public product
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: product_handle
+        in: path
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: product
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/storefront/{handle}/images/{id}":
+    get:
+      summary: Public product image
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: file
+  "/api/v1/storefront/{handle}/cart":
+    get:
+      summary: Public cart
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: cart
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/storefront/{handle}/cart/lines":
+    post:
+      summary: Add a cart line
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      responses:
+        '201':
+          description: added
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/storefront/{handle}/cart/lines/{id}":
+    patch:
+      summary: Update a cart line
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+    delete:
+      summary: Remove a cart line
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: removed
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/storefront/{handle}/checkout":
+    post:
+      summary: Check out the current cart
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: Idempotency-Key
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '201':
+          description: order placed
+          content:
+            application/json:
+              schema:
+                type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+  "/api/v1/storefront/{handle}/orders/{number}":
+    get:
+      summary: Public order confirmation
+      tags:
+      - Storefront
+      parameters:
+      - name: handle
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: number
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: access_token
+        in: query
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: order
+          content:
+            application/json:
+              schema:
+                type: object
+  "/api/v1/health":
+    get:
+      summary: Service health
+      tags:
+      - Operations
+      responses:
+        '200':
+          description: dependencies are reachable
+  "/api/v1/csrf":
+    get:
+      summary: CSRF token
+      tags:
+      - Identity
+      responses:
+        '200':
+          description: token for the session cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - csrf_token
+                properties:
+                  csrf_token:
+                    type: string
+  "/api/v1/registration":
+    post:
+      summary: Register an owner, merchant, and store
+      tags:
+      - Identity
+      parameters: []
+      responses:
+        '201':
+          description: registered
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - user
+                - store
+                properties:
+                  user:
+                    "$ref": "#/components/schemas/User"
+                  store:
+                    "$ref": "#/components/schemas/Store"
+        '422':
+          description: invalid
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - password
+              - name
+              - store_name
+              - handle
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+                store_name:
+                  type: string
+                handle:
+                  type: string
+                currency:
+                  type: string
+        required: true
+  "/api/v1/session":
+    post:
+      summary: Sign in
+      tags:
+      - Identity
+      parameters: []
+      responses:
+        '200':
+          description: signed in
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - user
+                - stores
+                properties:
+                  user:
+                    "$ref": "#/components/schemas/User"
+                  stores:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Store"
+        '401':
+          description: unknown credentials
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+        required: true
+    delete:
+      summary: Sign out
+      tags:
+      - Identity
+      responses:
+        '204':
+          description: signed out
+        '401':
+          description: signed out already
+  "/api/v1/me":
+    get:
+      summary: Current user and stores
+      tags:
+      - Identity
+      responses:
+        '200':
+          description: current session
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - user
+                - stores
+                properties:
+                  user:
+                    "$ref": "#/components/schemas/User"
+                  stores:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Store"
+        '401':
+          description: no session
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/stores":
+    get:
+      summary: List the signed-in user's stores
+      tags:
+      - Stores
+      responses:
+        '200':
+          description: membership stores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stores:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Store"
+    post:
+      summary: Create a store on an owned merchant
+      tags:
+      - Stores
+      parameters: []
+      responses:
+        '201':
+          description: store created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store:
+                    "$ref": "#/components/schemas/Store"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - merchant_id
+              - name
+              - handle
+              properties:
+                merchant_id:
+                  type: integer
+                name:
+                  type: string
+                handle:
+                  type: string
+                currency:
+                  type: string
+        required: true
+  "/api/v1/stores/{id}":
+    get:
+      summary: Show a store the user belongs to
+      tags:
+      - Stores
+      parameters:
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: store
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store:
+                    "$ref": "#/components/schemas/Store"
+        '404':
+          description: not a member
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+    patch:
+      summary: Update store settings
+      tags:
+      - Stores
+      parameters:
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  store:
+                    "$ref": "#/components/schemas/Store"
+        '403':
+          description: staff cannot update
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                currency:
+                  type: string
+  "/api/v1/stores/{store_id}/memberships":
+    get:
+      summary: List memberships
+      tags:
+      - Memberships
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memberships:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Membership"
+    post:
+      summary: Add an admin or staff member
+      tags:
+      - Memberships
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '201':
+          description: membership created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  membership:
+                    "$ref": "#/components/schemas/Membership"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - role
+              properties:
+                email:
+                  type: string
+                role:
+                  type: string
+        required: true
+  "/api/v1/stores/{store_id}/memberships/{id}":
+    patch:
+      summary: Change a membership role
+      tags:
+      - Memberships
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: role changed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  membership:
+                    "$ref": "#/components/schemas/Membership"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+    delete:
+      summary: Remove a membership
+      tags:
+      - Memberships
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      - name: id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '204':
+          description: removed
+  "/api/v1/stores/{store_id}/audit_events":
+    get:
+      summary: List audit events for a store
+      tags:
+      - Audit
+      parameters:
+      - name: store_id
+        in: path
+        schema:
+          type: integer
+        required: true
+      responses:
+        '200':
+          description: events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_events:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/AuditEvent"
+        '404':
+          description: not a member
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"

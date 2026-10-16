@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: shopkeep
+          MYSQL_DATABASE: shopkeep_test
+          MYSQL_USER: shopkeep
+          MYSQL_PASSWORD: shopkeep
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ushopkeep -pshopkeep"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+      redis:
+        image: redis:8.4
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_USER: shopkeep
+      MYSQL_PASSWORD: shopkeep
+      MYSQL_TEST_DATABASE: shopkeep_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.7"
+          bundler-cache: true
+          working-directory: backend
+      - name: RSpec
+        run: bundle exec rspec
+      - name: OpenAPI document is current
+        run: bundle exec rake rswag:specs:swaggerize && git diff --exit-code -- openapi
+      - name: Brakeman
+        run: bundle exec brakeman -q -w2 --no-pager
+      - name: bundler-audit
+        run: bundle exec bundler-audit check --update
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "26.10.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run openapi && git diff --exit-code -- src/api/schema.d.ts
+      - run: npx tsc --noEmit
+      - run: npx eslint .
+      - run: npm test
+      - run: npm audit --audit-level=high

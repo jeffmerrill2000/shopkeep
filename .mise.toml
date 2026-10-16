@@ -1,0 +1,8 @@
+[tools]
+ruby = "4.0.7"
+
+# The Command Line Tools default xcrun to MacOSX27, whose .tbd stubs use
+# arm64e.x1. The installed ld (ld-1267) cannot parse that architecture, so
+# native gems fail to link. MacOSX26.5.sdk links cleanly with this linker.
+[env]
+SDKROOT = "/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk"
