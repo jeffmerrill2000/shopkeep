@@ -121,4 +121,4 @@ See `docs/adr/0008-version-matrix.md`.
 
 Milestones 1 through 7 run locally. Milestone 7 adds the merchant journey (catalog, inventory, fulfillment, customers, reports, and sign-out), shopper error states, desktop and mobile Playwright projects, and an axe check for serious and critical issues on the login, storefront, cart, checkout, and merchant home screens. Milestone 8 (Terraform, AWS, Kafka, and Vitess) is not started.
 
-There is no git remote yet, so the GitHub Actions workflow has not run in the cloud. The same checks were run locally. See `docs/security.md` for the scanner output.
+The same checks were run locally. See `docs/security.md` for the scanner output.
